@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monitoramento de Temperatura e Umidade</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #555;
+        }
+
+        .valor {
+            font-size: 34px;
+            font-weight: bold;
+        }
+
+        .status-normal {
+            color: #188038;
+        }
+
+        .status-atencao {
+            color: #d93025;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
+
+        th {
+            background: #263238;
+            color: white;
+        }
+
+        .rodape {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Monitoramento de Temperatura e Umidade</h1>
+
+        <div class="cards">
+            <div class="card">
+                <h2>Temperatura</h2>
+                <div class="valor" id="temperatura">-- °C</div>
+            </div>
+
+            <div class="card">
+                <h2>Umidade</h2>
+                <div class="valor" id="umidade">--%</div>
+            </div>
+
+            <div class="card">
+                <h2>Status</h2>
+                <div class="valor" id="status">--</div>
+            </div>
+        </div>
+
+        <h2>Histórico de Leituras</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Horário</th>
+                    <th>Temperatura</th>
+                    <th>Umidade</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaHistorico"></tbody>
+        </table>
+
+        <div class="rodape">
+            Dados atualizados automaticamente a cada 5 segundos.
+        </div>
+    </div>
+
+    <script>
+        async function carregarDados() {
+            try {
+                const resposta = await fetch('/dados');
+                const dados = await resposta.json();
+
+                document.getElementById('temperatura').textContent = `${dados.temperatura} °C`;
+                document.getElementById('umidade').textContent = `${dados.umidade}%`;
+
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = dados.status;
+                statusEl.className = 'valor';
+
+                if (dados.status === 'normal') {
+                    statusEl.classList.add('status-normal');
+                } else {
+                    statusEl.classList.add('status-atencao');
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+            }
+        }
+
+        async function carregarHistorico() {
+            try {
+                const resposta = await fetch('/historico');
+                const historico = await resposta.json();
+
+                const tabela = document.getElementById('tabelaHistorico');
+                tabela.innerHTML = '';
+
+                [...historico].reverse().forEach(item => {
+                    const linha = document.createElement('tr');
+
+                    linha.innerHTML = `
+                        <td>${item.dataHora}</td>
+                        <td>${item.temperatura} °C</td>
+                        <td>${item.umidade}%</td>
+                        <td>${item.status}</td>
+                    `;
+
+                    tabela.appendChild(linha);
+                });
+
+            } catch (error) {
+                console.error('Erro ao carregar histórico:', error);
+            }
+        }
+
+        function atualizarPagina() {
+            carregarDados();
+            carregarHistorico();
+        }
+
+        atualizarPagina();
+        setInterval(atualizarPagina, 5000);
+    </script>
+</body>
+</html>
